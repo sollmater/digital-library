@@ -6,4 +6,8 @@
 
 def help(a):
     print(a)
+
+print('Hello World')
+#uihdwedwedewde
+
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
