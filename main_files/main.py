@@ -9,10 +9,10 @@ class MyWidget(QMainWindow):
     def __init__(self):
         super().__init__()
         uic.loadUi('authorization.ui', self)
-        self.pushButton.clicked.connect(self.check_password)
-        self.pushButton_2.clicked.connect(self.check_password)
+        self.pushButton.clicked.connect(self.password)
+        self.pushButton_2.clicked.connect(self.password)
 
-    def check_password(self):
+    def password(self):
         uic.loadUi('main_window.ui', self)
 
 
