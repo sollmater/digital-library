@@ -2,55 +2,125 @@
 <ui version="4.0">
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>586</height>
+    <width>1113</width>
+    <height>757</height>
    </rect>
   </property>
-  <property name="windowTitle">
-   <string>MainWindow</string>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <horstretch>111</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
-  <widget class="QWidget" name="centralwidget"/>
-  <widget class="profile" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>800</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <widget class="QMenu" name="menuProfile">
-    <property name="title">
-     <string>Profile</string>
+  <property name="minimumSize">
+   <size>
+    <width>1113</width>
+    <height>757</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>1113</width>
+    <height>757</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Электронная Библиотека</string>
+  </property>
+  <property name="layoutDirection">
+   <enum>Qt::LeftToRight</enum>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QTabWidget" name="tabWidget">
+    <property name="enabled">
+     <bool>true</bool>
     </property>
-   </widget>
-   <widget class="QMenu" name="menuCatalog">
-    <property name="title">
-     <string>Catalog</string>
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>1113</width>
+      <height>757</height>
+     </rect>
     </property>
-   </widget>
-   <widget class="QMenu" name="menuRead">
-    <property name="title">
-     <string>Read</string>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Каталог&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
     </property>
+    <property name="styleSheet">
+     <string notr="true"/>
+    </property>
+    <property name="currentIndex">
+     <number>2</number>
+    </property>
+    <widget class="QWidget" name="tab">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Каталог&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <attribute name="title">
+      <string>Каталог</string>
+     </attribute>
+     <widget class="QTableWidget" name="tableWidget">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>1063</width>
+        <height>757</height>
+       </rect>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="tab_2">
+     <attribute name="title">
+      <string>Список для чтения</string>
+     </attribute>
+     <widget class="QTableWidget" name="tableWidget_2">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>1063</width>
+        <height>757</height>
+       </rect>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="tab_3">
+     <attribute name="title">
+      <string>Профиль</string>
+     </attribute>
+    </widget>
    </widget>
-   <addaction name="menuCatalog"/>
-   <addaction name="menuProfile"/>
-   <addaction name="menuRead"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionuil">
+   <property name="text">
+    <string>uil</string>
+   </property>
+  </action>
+  <action name="action">
+   <property name="text">
+    <string>помошь</string>
+   </property>
+  </action>
+  <action name="action_2">
+   <property name="text">
+    <string>уцкакуап</string>
+   </property>
+  </action>
+  <action name="action_3">
+   <property name="text">
+    <string>укпкупку</string>
+   </property>
+  </action>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>profile</class>
-   <extends>QMenuBar</extends>
-   <header location="global">profile.h</header>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>
