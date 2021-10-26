@@ -57,7 +57,7 @@
      <string notr="true"/>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="tab">
      <property name="toolTip">
@@ -95,6 +95,11 @@
     <widget class="QWidget" name="tab_3">
      <attribute name="title">
       <string>Профиль</string>
+     </attribute>
+    </widget>
+    <widget class="QWidget" name="tab_4">
+     <attribute name="title">
+      <string>Статистика</string>
      </attribute>
     </widget>
    </widget>
