@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>500</width>
-    <height>350</height>
+    <height>500</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,14 +19,54 @@
      <rect>
       <x>30</x>
       <y>40</y>
-      <width>451</width>
-      <height>191</height>
+      <width>441</width>
+      <height>271</height>
      </rect>
     </property>
     <property name="title">
      <string/>
     </property>
     <layout class="QGridLayout" name="gridLayout">
+     <item row="6" column="1">
+      <widget class="QComboBox" name="comboBox">
+       <item>
+        <property name="text">
+         <string>Библиотекарь</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Читатель</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item row="8" column="1">
+      <widget class="QLineEdit" name="lineEdit_5"/>
+     </item>
+     <item row="4" column="1">
+      <widget class="QLineEdit" name="lineEdit_3"/>
+     </item>
+     <item row="2" column="1">
+      <widget class="QSpinBox" name="spinBox"/>
+     </item>
+     <item row="8" column="0">
+      <widget class="QLabel" name="label_9">
+       <property name="text">
+        <string>Ваша почта (?)</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Возраст</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLineEdit" name="lineEdit"/>
+     </item>
      <item row="0" column="0">
       <widget class="QLabel" name="label">
        <property name="text">
@@ -34,28 +74,19 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="2">
-      <widget class="QLineEdit" name="lineEdit"/>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label_2">
-       <property name="text">
-        <string>Возраст</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0">
+     <item row="4" column="0">
       <widget class="QLabel" name="label_3">
        <property name="text">
         <string>Пароль</string>
        </property>
       </widget>
      </item>
-     <item row="2" column="2">
-      <widget class="QLineEdit" name="lineEdit_3"/>
-     </item>
-     <item row="1" column="2">
-      <widget class="QSpinBox" name="spinBox"/>
+     <item row="6" column="0">
+      <widget class="QLabel" name="label_8">
+       <property name="text">
+        <string>Должность</string>
+       </property>
+      </widget>
      </item>
     </layout>
    </widget>
@@ -76,13 +107,39 @@
     <property name="geometry">
      <rect>
       <x>210</x>
-      <y>240</y>
+      <y>340</y>
       <width>75</width>
       <height>23</height>
      </rect>
     </property>
     <property name="text">
      <string>Регистрация</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButton_2">
+    <property name="geometry">
+     <rect>
+      <x>170</x>
+      <y>370</y>
+      <width>151</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Вернуться к авторизации</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_10">
+    <property name="geometry">
+     <rect>
+      <x>50</x>
+      <y>450</y>
+      <width>281</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>(?) - Ваша почта нам нужна для связи с покупателем</string>
     </property>
    </widget>
   </widget>
