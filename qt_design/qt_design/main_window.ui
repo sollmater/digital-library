@@ -63,7 +63,7 @@
      <string notr="true"/>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="tab">
      <property name="toolTip">
@@ -167,18 +167,28 @@
      <attribute name="title">
       <string>Статистика</string>
      </attribute>
-     <widget class="QPushButton" name="pushButton">
+     <widget class="QWidget" name="widget" native="true">
       <property name="geometry">
        <rect>
-        <x>920</x>
-        <y>10</y>
-        <width>181</width>
-        <height>23</height>
+        <x>0</x>
+        <y>0</y>
+        <width>1111</width>
+        <height>757</height>
        </rect>
       </property>
-      <property name="text">
-       <string>Общая информация о профиле</string>
-      </property>
+      <widget class="QPushButton" name="pushButton">
+       <property name="geometry">
+        <rect>
+         <x>920</x>
+         <y>10</y>
+         <width>181</width>
+         <height>23</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Общая информация о профиле</string>
+       </property>
+      </widget>
      </widget>
     </widget>
    </widget>
