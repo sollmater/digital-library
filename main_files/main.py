@@ -5,9 +5,14 @@ from qt_design.python_design.main_window_design import Ui_MainWindow_Design
 from qt_design.python_design.authorization import Ui_Authorization_Design
 from qt_design.python_design.registration_design import Ui_Registration_Design
 from qt_design.python_design.profile_information_design import Ui_Profile_Information_Design
+from qt_design.python_design.delete_item_form_design import Ui_Delete_Item_Form_Design
+from qt_design.python_design.insert_item_form_design import Ui_Insert_Item_Form_Design
 
 from PyQt5 import uic, QtWidgets
-from PyQt5.QtWidgets import QApplication, QMainWindow, QTableWidgetItem, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTableWidgetItem, QMessageBox, QGridLayout
+from PyQt5.QtChart import QChart, QChartView, QPieSeries, QPieSlice
+from PyQt5.QtGui import QPainter, QPen
+from PyQt5.QtCore import Qt
 
 connection = sqlite3.connect('digital_library.sqlite')
 
@@ -63,7 +68,18 @@ class Registration(QMainWindow, Ui_Registration_Design):
         help.append(self.comboBox.currentText())
         help.append(self.lineEdit_5.text())
         if '' not in help:
-            print(help)
+            req = """INSERT INTO peoples(name, age, password, role, mail) VALUES(?, ?, ?, ?, ?)"""
+            cur = connection.cursor()
+            result = cur.execute(req, (help[0], help[1], help[2], help[3], help[4],))
+            if result:
+                connection.commit()
+                valid = QMessageBox.warning(self, 'Проверка регистрации!',
+                                            'Поздравляю! Вы успешно зарегестрировались')
+                self.close()
+                self.main_window.show()
+            else:
+                valid = QMessageBox.warning(self, 'Ошибка при регистрации!',
+                                            'Что-то пошло не так')
         else:
             valid = QMessageBox.warning(self, 'Ошибка при регистрации!',
                                         'Нужно заполнить все графы при регистрации. Пожалуйста, повторите попытку')
@@ -82,10 +98,18 @@ class MyMainWindow(QMainWindow, Ui_MainWindow_Design):
         super().__init__()
         self.setupUi(self)
 
+        self.delete_form = DeleteItemForm(self)
+        self.add_form = AddItemForm(self)
+        self.update_form = UpdateItemForm(self)
+
         self.pushButton.clicked.connect(self.show_profile_information)
+        self.pushButton_2.clicked.connect(self.show_delete)
+        self.pushButton_3.clicked.connect(self.show_update)
+        self.pushButton_4.clicked.connect(self.show_add_book)
 
         self.redraw_table_1()
         self.redraw_table_2()
+        self.create_piechart()
 
     def password(self):
         uic.loadUi('main_window.ui', self)
@@ -130,6 +154,65 @@ class MyMainWindow(QMainWindow, Ui_MainWindow_Design):
         header.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
         header.setSectionResizeMode(3, QtWidgets.QHeaderView.Stretch)
 
+    def show_delete(self):
+        if self.role == 'Библиотекарь':
+            self.delete_form.show()
+        else:
+            valid = QMessageBox.warning(self, 'Проверка системных прав!',
+                                        'Только пользователь с должностью "Библиотекарь" может редактировать каталог книг')
+
+    def delete_item_book(self, id):
+        # запрос на удаление элементов
+        try:
+            req = """DELETE from books WHERE id = ?"""
+            connection.execute(req, (id,))
+            # сохраняем изменения
+            connection.commit()
+            # перерисовываем таблицу
+            self.redraw_table_1()
+        except:
+            valid = QMessageBox.warning(self, 'Ошибка при работе с базой книг',
+                                        'Произошла ошибка при удалении книг!')
+
+    def show_update(self):
+        if self.role == 'Библиотекарь':
+            pass
+        else:
+            valid = QMessageBox.warning(self, 'Проверка системных прав!',
+                                        'Только пользователь с должностью "Библиотекарь" может редактировать каталог книг')
+
+    def show_add_book(self):
+        if self.role == 'Библиотекарь':
+            self.add_form.show()
+        else:
+            valid = QMessageBox.warning(self, 'Проверка системных прав!',
+                                        'Только пользователь с должностью "Библиотекарь" может редактировать каталог книг')
+
+    def show_add_bookmarks(self):
+        if self.role == 'Бибилиотекарь':
+            pass
+        else:
+            valid = QMessageBox.warning(self, 'Проверка системных прав!',
+                                        'Только пользователь с должностью "Библиотекарь" может редактировать каталог книг')
+
+    def update_books(self):
+        pass
+
+    def add_to_books(self, name, author, year, publisher, translator, genre):
+        try:
+            req = """INSERT INTO books(name, author, year, publisher, translator, genre) VALUES(?, ?, ?, ?, ?, ?)"""
+            connection.execute(req, (name, author, year, publisher, translator, genre))
+            # сохраняем изменения
+            connection.commit()
+            # перерисовываем таблицу
+            self.redraw_table_1()
+        except:
+            valid = QMessageBox.warning(self, 'Ошибка при работе с базой книг',
+                                        'Произошла ошибка при удалении книг!')
+
+    def add_to_bookmarks(self):
+        pass
+
     def get_profile_information(self, name, age, role, password, mail):
         self.name = name
         self.age = age
@@ -140,6 +223,109 @@ class MyMainWindow(QMainWindow, Ui_MainWindow_Design):
     def show_profile_information(self):
         self.profile_information = Profile_Information(self.name, self.age, self.role, self.password, self.mail)
         self.profile_information.show()
+
+    def create_piechart(self):
+        series = QPieSeries()
+        series.append("Фантастика", 80)
+        series.append("Детектив", 70)
+        series.append("Вестерн", 50)
+        series.append("Роман", 40)
+        series.append("Приключения", 30)
+
+        # adding slice
+        slice = QPieSlice()
+        slice = series.slices()[2]
+        slice.setExploded(True)
+        slice.setLabelVisible(True)
+        slice.setPen(QPen(Qt.darkGreen, 2))
+        slice.setBrush(Qt.green)
+
+        chart = QChart()
+        chart.legend().hide()
+        chart.addSeries(series)
+        chart.createDefaultAxes()
+        chart.setAnimationOptions(QChart.SeriesAnimations)
+        chart.setTitle("Pie Chart Example")
+
+        chart.legend().setVisible(True)
+        chart.legend().setAlignment(Qt.AlignBottom)
+
+        chartview = QChartView(chart)
+        chartview.setRenderHint(QPainter.Antialiasing)
+
+        mainlayot = QGridLayout()
+        mainlayot.addWidget(self.pushButton)
+        mainlayot.addWidget(chartview, 20, 10)
+
+        self.widget.setLayout(mainlayot)
+
+
+# Класс формы добавления, со всеми методами
+class AddItemForm(QMainWindow, Ui_Insert_Item_Form_Design):
+    def __init__(self, parent=None):
+        super(AddItemForm, self).__init__(parent)
+        self.setupUi(self)
+        self.pushButton_2.clicked.connect(self.save_item)
+
+    def save_item(self):
+        name = self.lineEdit_4.text()
+        author = self.lineEdit_5.text()
+        year = self.lineEdit_6.text()
+        publisher = self.lineEdit_7.text()
+        translator = self.lineEdit_8.text()
+        genre = self.lineEdit_9.text()
+        # отправляем родительскому окну информацию для добавления
+        self.parent().add_to_books(name, author, year, publisher, translator, genre)
+        self.close()
+
+
+# Класс формы удаления, со всеми методами
+class DeleteItemForm(QMainWindow, Ui_Delete_Item_Form_Design):
+    def __init__(self, parent=None):
+        super(DeleteItemForm, self).__init__(parent)
+        self.setupUi(self)
+        self.pushButton.clicked.connect(self.save_delete_item)
+
+    def save_delete_item(self):
+        id = self.lineEdit.text()
+        valid = QMessageBox.question(
+            self, 'Вопросик', "Действительно удалить элемент с id: " + str(id),
+            QMessageBox.Yes, QMessageBox.No)
+        # Если пользователь ответил утвердительно,
+        # переходим в функцию удаления элементов
+        if valid == QMessageBox.Yes:
+            self.parent().delete_item_book(id)
+        self.close()
+
+
+# Класс формы обновления, со всеми методами
+class UpdateItemForm(QMainWindow):
+    def __init__(self, parent=None):
+        super(UpdateItemForm, self).__init__(parent)
+        # uic.loadUi("update_row.ui", self)
+        self.id = None
+        self.name = None
+        self.count = None
+        self.cost = None
+        # self.pushButton.clicked.connect(self.save_update_item)
+
+    def set_info(self, id, name, count, cost):
+        self.id = id
+        self.name = name
+        self.count = count
+        self.cost = cost
+        self.lineEdit.setText(id)
+        self.lineEdit_2.setText(name)
+        self.lineEdit_3.setText(count)
+        self.lineEdit_4.setText(cost)
+
+    def save_update_item(self):
+        id = self.lineEdit.text()
+        name = self.lineEdit_2.text()
+        count = self.lineEdit_3.text()
+        price = self.lineEdit_4.text()
+        self.parent().update_item(id, name, count, price)
+        self.close()
 
 
 class Profile_Information(QMainWindow, Ui_Profile_Information_Design):
