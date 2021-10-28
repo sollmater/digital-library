@@ -111,9 +111,6 @@ class MyMainWindow(QMainWindow, Ui_MainWindow_Design):
         self.redraw_table_2()
         self.create_piechart()
 
-    def password(self):
-        uic.loadUi('main_window.ui', self)
-
     def redraw_table_1(self):
         req = """SELECT * FROM books"""
         cur = connection.cursor()
