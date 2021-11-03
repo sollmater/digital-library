@@ -22,6 +22,13 @@
   <property name="autoFillBackground">
    <bool>false</bool>
   </property>
+  <property name="styleSheet">
+   <string notr="true">QWidget{
+	background-color: #404040;
+	color: white;
+}
+</string>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QLabel" name="label">
     <property name="geometry">
@@ -82,6 +89,13 @@
      </item>
      <item row="2" column="0" colspan="2">
       <widget class="QPushButton" name="pushButton">
+       <property name="styleSheet">
+        <string notr="true">QPushButton{
+	background-color: #404040;
+	color: white;
+}
+</string>
+       </property>
        <property name="text">
         <string>Войти</string>
        </property>
