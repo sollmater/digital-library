@@ -39,10 +39,19 @@ class Authorization(QMainWindow, Ui_Authorization_Design):
         if result:
             if password in result:
                 self.close()
-                self.main_window.get_profile_information(result[1], result[2], result[4], result[3], result[5])
-                self.main_window.redraw_table_1()
-                self.main_window.redraw_table_2()
-                self.main_window.show()
+                if result[4] == 'Читатель':
+                    self.main_window = MyMainWindow_User(self)
+                    self.main_window.get_profile_information(result[1], result[2], result[4], result[3], result[5])
+                    self.main_window.redraw_table_1()
+                    self.main_window.redraw_table_2()
+                    self.main_window.show()
+                else:
+                    self.main_window = MyMainWindow_Dev(self)
+                    self.main_window.get_profile_information(result[1], result[2], result[4], result[3], result[5])
+                    self.main_window.redraw_table_1()
+                    self.main_window.redraw_table_2()
+                    self.main_window.show()
+                connection.commit()
             else:
                 valid = QMessageBox.warning(self, 'Ошибка при входе!',
                                             'К сожалению, пароль не пододит, пожалуйста, повторите попытку')
@@ -54,12 +63,17 @@ class Authorization(QMainWindow, Ui_Authorization_Design):
         self.close()
         self.registration.show()
 
+    def make_bookmarks_field(self, name):
+        req = "INSERT INTO bookmarks(name, list_books) VALUES(?, '')"
+        cur = connection.cursor()
+        cur.execute(req, (name))
+        connection.commit()
+
 
 class Registration(QMainWindow, Ui_Registration_Design):
     def __init__(self, parent=None):
         super().__init__()
         self.setupUi(self)
-        self.main_window = MyMainWindow(self)
 
         self.pushButton.clicked.connect(self.check_registration)
         self.pushButton_2.clicked.connect(self.come_back)
@@ -70,28 +84,53 @@ class Registration(QMainWindow, Ui_Registration_Design):
         help.append(self.spinBox.text())
         help.append(self.lineEdit_3.text())
         help.append(self.comboBox.currentText())
+        help.append(self.lineEdit_2.text())
         help.append(self.lineEdit_5.text())
+        if self.radioButton.isChecked():
+            help.append(self.radioButton.text())
+        if self.radioButton_2.isChecked():
+            help.append(self.radioButton_2.text())
         if '' not in help:
             if self.check_name(help[0]):
-                req = """INSERT INTO peoples(name, age, password, role, mail) VALUES(?, ?, ?, ?, ?)"""
-                cur = connection.cursor()
-                result = cur.execute(req, (help[0], help[1], help[2], help[3], help[4],))
-                if result:
-                    if self.check_email(help[4]):
-                        connection.commit()
-                        valid = QMessageBox.warning(self, 'Проверка регистрации!',
-                                                    'Поздравляю! Вы успешно зарегестрировались')
-                        self.close()
-                        self.main_window.get_profile_information(help[0], help[1], help[2], help[3], help[4])
-                        self.main_window.redraw_table_1()
-                        self.main_window.redraw_table_2()
-                        self.main_window.show()
+                if int(help[1]) > 0:
+                    if (help[3] == 'Библиотекарь' and help[4] == '456') or help[3] == 'Читатель':
+                        if self.check_email(help[4]):
+                            req = """INSERT INTO peoples(name, age, sex, password, role, mail) VALUES(?, ?, ?, ?, ?, ?)"""
+                            cur = connection.cursor()
+                            result = cur.execute(req, (help[0], help[1], help[2], help[3], help[4], help[6]))
+                            if result:
+
+                                valid = QMessageBox.warning(self, 'Проверка регистрации!',
+                                                            'Поздравляю! Вы успешно зарегестрировались')
+                                self.close()
+                                if help[3] == 'Читатель':
+                                    self.main_window = MyMainWindow_User(self)
+                                    self.main_window.get_profile_information(help[0], help[1], help[2], help[3], help[4], help[6])
+                                    self.make_bookmarks_field(help[0])
+                                    self.main_window.redraw_table_1()
+                                    self.main_window.redraw_table_2()
+                                    self.main_window.show()
+                                else:
+                                    self.main_window = MyMainWindow_Dev(self)
+                                    self.main_window.get_profile_information(help[0], help[1], help[2], help[3], help[4], help[6])
+                                    self.make_bookmarks_field(help[0])
+                                    self.main_window.redraw_table_1()
+                                    self.main_window.redraw_table_2()
+                                    self.main_window.show()
+                                connection.commit()
+
+                            else:
+                                valid = QMessageBox.warning(self, 'Ошибка при регистрации!',
+                                                            'Что-то пошло не так')
+                        else:
+                            valid = QMessageBox.warning(self, 'Ошибка при регистрации!',
+                                                        'Укажите правильный формат почты!!!33')
                     else:
                         valid = QMessageBox.warning(self, 'Ошибка при регистрации!',
-                                                    'Укажите правильный формат почты!!!33')
+                                                    'Укажите код доступа для библиотекаря!!!')
                 else:
                     valid = QMessageBox.warning(self, 'Ошибка при регистрации!',
-                                                'Что-то пошло не так')
+                                                'Я думаю невозможно иметь отрицательный или нулевой возраст')
             else:
                 valid = QMessageBox.warning(self, 'Ошибка при регистрации!',
                                             'Такое имя уже есть!')
@@ -109,16 +148,22 @@ class Registration(QMainWindow, Ui_Registration_Design):
             return True
 
     def check_email(self, email):
-        email = str(email)
-        x = len(email)
-        for i in range(x):
-            if email[i][0] == "@":
-                return False
-            elif email[i][-1] == "@":
-                return False
-            elif not email[i].isalnum():
-                return False
+        # email = str(email)
+        # x = len(email)
+        # if email[0] == '@' or email[-1] == '@':
+        #     return False
+        # if '@' not in email:
+        #     return False
+        # for i in range(x):
+        #     if not email[i].isalnum() and email[i] != '@':
+        #         return False
         return True
+
+    def make_bookmarks_field(self, name):
+        req = "INSERT INTO bookmarks(name, list_books) VALUES(?, '')"
+        cur = connection.cursor()
+        cur.execute(req, (name,))
+        connection.commit()
 
     def come_back(self):
         self.authorization = Authorization(self)
@@ -126,7 +171,7 @@ class Registration(QMainWindow, Ui_Registration_Design):
         self.authorization.show()
 
 
-class MyMainWindow(QMainWindow, Ui_MainWindow_Design_Dev):
+class MyMainWindow_Dev(QMainWindow, Ui_MainWindow_Design_Dev):
     def __init__(self, parent=Authorization):
         super().__init__()
         self.setupUi(self)
@@ -144,6 +189,8 @@ class MyMainWindow(QMainWindow, Ui_MainWindow_Design_Dev):
         self.pushButton_4.clicked.connect(self.show_add_book)
         self.pushButton_5.clicked.connect(self.show_add_bookmarks)
         self.pushButton_6.clicked.connect(self.show_delete_from_bookmarks)
+        self.pushButton_7.clicked.connect(self.make_filters)
+        self.pushButton_8.clicked.connect(self.clear_filters)
 
         self.name = ''
         self.flag = False
@@ -156,12 +203,13 @@ class MyMainWindow(QMainWindow, Ui_MainWindow_Design_Dev):
         self.create_piechart_3()
         self.create_piechart_4()
 
-    def get_profile_information(self, name, age, role, password, mail):
+    def get_profile_information(self, name, age, role, password, mail, sex):
         self.name = name
         self.age = age
         self.role = role
         self.password = password
         self.mail = mail
+        self.sex = sex
         self.flag = True
 
     def redraw_table_1(self):
@@ -189,34 +237,76 @@ class MyMainWindow(QMainWindow, Ui_MainWindow_Design_Dev):
             req = """SELECT list_books FROM bookmarks WHERE name = ?"""
             cur = connection.cursor()
             result = cur.execute(req, (self.name,)).fetchall()
-            help = [i for i in result[0]]
-            if help[0] != '':
-                self.pushButton_6.setText('Удалить')
-                self.tableWidget_2.setColumnCount(7)
-                for i in help[0].split(','):
-                    print(i)
-                elem = ['Номер в каталоге', 'Название книги', 'Автор', 'Год написания', 'Издатель', 'Перевод', 'Жанр']
-                # установка заголовков в таблицу
-                self.tableWidget_2.setRowCount(len(help[0].split(',')))
-                self.tableWidget_2.setHorizontalHeaderLabels(elem)
-                for i in range(len(help[0].split(','))):
-                    id = help[0].split(',')[i]
-                    req = """SELECT id, name, author, year, publisher, translator, genre FROM books WHERE id = ?"""
-                    cur = connection.cursor()
-                    result = cur.execute(req, (id,)).fetchone()
-                    for j in range(len(result)):
-                        self.tableWidget_2.setItem(i, j, QTableWidgetItem(str(result[j])))
+            if len(result) > 0:
+                help = [i for i in result[0]]
+                if help[0] != '':
+                    self.pushButton_6.setText('Удалить')
+                    self.tableWidget_2.setColumnCount(7)
+                    for i in help[0].split(','):
+                        print(i)
+                    elem = ['Номер в каталоге', 'Название книги', 'Автор', 'Год написания', 'Издатель', 'Перевод',
+                            'Жанр']
+                    # установка заголовков в таблицу
+                    self.tableWidget_2.setRowCount(len(help[0].split(',')))
+                    self.tableWidget_2.setHorizontalHeaderLabels(elem)
+                    for i in range(len(help[0].split(','))):
+                        id = help[0].split(',')[i]
+                        req = """SELECT id, name, author, year, publisher, translator, genre FROM books WHERE id = ?"""
+                        cur = connection.cursor()
+                        result = cur.execute(req, (id,)).fetchone()
+                        for j in range(len(result)):
+                            self.tableWidget_2.setItem(i, j, QTableWidgetItem(str(result[j])))
 
-                # for i, elem in enumerate(result):
-                #     for j, val in enumerate(elem):
-                #         self.tableWidget_2.setItem(i, j, QTableWidgetItem(str(val)))
-                header = self.tableWidget_2.horizontalHeader()
-                header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
-                header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
-                header.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
-                header.setSectionResizeMode(3, QtWidgets.QHeaderView.Stretch)
+                    # for i, elem in enumerate(result):
+                    #     for j, val in enumerate(elem):
+                    #         self.tableWidget_2.setItem(i, j, QTableWidgetItem(str(val)))
+                    header = self.tableWidget_2.horizontalHeader()
+                    header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+                    header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
+                    header.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
+                    header.setSectionResizeMode(3, QtWidgets.QHeaderView.Stretch)
+                else:
+                    self.pushButton_6.setText('У вас нет книг в списке для чтения')
             else:
                 self.pushButton_6.setText('У вас нет книг в списке для чтения')
+
+    def make_filters(self):
+        checkbox = ['%', '%', '%']
+        if self.lineEdit.text():
+            year = self.lineEdit.text()
+            checkbox[0] = year
+        if self.lineEdit_2.text():
+            author = self.lineEdit_2.text()
+            checkbox[1] = author
+        if self.comboBox_2.currentText() != 'все жанры':
+            genre = self.comboBox_2.currentText()
+            checkbox[2] = genre
+        self.show_filter(checkbox)
+
+    def show_filter(self, checkbox):
+        req = """SELECT * FROM books WHERE year LIKE ? AND author LIKE ? AND genre LIKE ?"""
+        cur = connection.cursor()
+        result = cur.execute(req, (checkbox[0], checkbox[1], checkbox[2],)).fetchall()
+        self.tableWidget.setRowCount(len(result))
+        if len(result):
+            self.tableWidget.setColumnCount(len(result[0]))
+        # получение заголовков таблицы с помощью cur.description
+        self.titles = [description[0] for description in cur.description]
+        # установка заголовков в таблицу
+        self.tableWidget.setHorizontalHeaderLabels(self.titles)
+        for i, elem in enumerate(result):
+            for j, val in enumerate(elem):
+                self.tableWidget.setItem(i, j, QTableWidgetItem(str(val)))
+        header = self.tableWidget.horizontalHeader()
+        header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+        header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
+        header.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
+        header.setSectionResizeMode(3, QtWidgets.QHeaderView.Stretch)
+
+    def clear_filters(self):
+        self.lineEdit.clear()
+        self.lineEdit_2.clear()
+        self.redraw_table_1()
 
     def show_delete(self):
         if self.role == 'Библиотекарь':
@@ -315,6 +405,9 @@ class MyMainWindow(QMainWindow, Ui_MainWindow_Design_Dev):
             cur = connection.cursor()
             result = cur.execute(req, (self.name,)).fetchone()
             list_books = result[0].split(',')
+            for i in range(len(list_books)):
+                if list_books[i] == '':
+                    del list_books[i]
             if str(id) not in list_books:
                 list_books.append(str(id))
                 req = """UPDATE bookmarks SET list_books = ? WHERE name = ?"""
@@ -496,18 +589,15 @@ class MyMainWindow_User(QMainWindow, Ui_MainWindow_Design_User):
         self.setupUi(self)
 
         self.profile_information = Profile_Information(self)
-        # self.delete_form = DeleteItemForm(self)
-        # self.add_form = AddItemForm(self)
-        # self.update_form = UpdateItemForm(self)
         self.add_to_bookmarks_form = AddBookmarksItemForm(self)
         self.delete_from_bookmarks = DeleteBookmarksItemForm(self)
 
         self.pushButton.clicked.connect(self.show_profile_information)
-        # self.pushButton_2.clicked.connect(self.show_delete)
-        # self.pushButton_3.clicked.connect(self.show_update)
-        # self.pushButton_4.clicked.connect(self.show_add_book)
+        self.pushButton_2.clicked.connect(self.clear_filters)
+
         self.pushButton_5.clicked.connect(self.show_add_bookmarks)
         self.pushButton_6.clicked.connect(self.show_delete_from_bookmarks)
+        self.pushButton_7.clicked.connect(self.make_filters)
 
         self.name = ''
         self.flag = False
@@ -520,9 +610,10 @@ class MyMainWindow_User(QMainWindow, Ui_MainWindow_Design_User):
         self.create_piechart_3()
         self.create_piechart_4()
 
-    def get_profile_information(self, name, age, role, password, mail):
+    def get_profile_information(self, name, age, sex,  role, password, mail):
         self.name = name
         self.age = age
+        self.sex = sex
         self.role = role
         self.password = password
         self.mail = mail
@@ -553,34 +644,78 @@ class MyMainWindow_User(QMainWindow, Ui_MainWindow_Design_User):
             req = """SELECT list_books FROM bookmarks WHERE name = ?"""
             cur = connection.cursor()
             result = cur.execute(req, (self.name,)).fetchall()
-            help = [i for i in result[0]]
-            if help[0] != '':
-                self.pushButton_6.setText('Удалить')
-                self.tableWidget_2.setColumnCount(7)
-                for i in help[0].split(','):
-                    print(i)
-                elem = ['Номер в каталоге', 'Название книги', 'Автор', 'Год написания', 'Издатель', 'Перевод', 'Жанр']
-                # установка заголовков в таблицу
-                self.tableWidget_2.setRowCount(len(help[0].split(',')))
-                self.tableWidget_2.setHorizontalHeaderLabels(elem)
-                for i in range(len(help[0].split(','))):
-                    id = help[0].split(',')[i]
-                    req = """SELECT id, name, author, year, publisher, translator, genre FROM books WHERE id = ?"""
-                    cur = connection.cursor()
-                    result = cur.execute(req, (id,)).fetchone()
-                    for j in range(len(result)):
-                        self.tableWidget_2.setItem(i, j, QTableWidgetItem(str(result[j])))
+            if len(result) > 0:
+                help = [i for i in result[0]]
+                if help[0] != '':
+                    self.pushButton_6.setText('Удалить')
+                    self.tableWidget_2.setColumnCount(7)
+                    for i in help[0].split(','):
+                        print(i)
+                    elem = ['Номер в каталоге', 'Название книги', 'Автор', 'Год написания', 'Издатель', 'Перевод',
+                            'Жанр']
+                    # установка заголовков в таблицу
+                    self.tableWidget_2.setRowCount(len(help[0].split(',')))
+                    self.tableWidget_2.setHorizontalHeaderLabels(elem)
+                    for i in range(len(help[0].split(','))):
+                        id = help[0].split(',')[i]
+                        req = """SELECT id, name, author, year, publisher, translator, genre FROM books WHERE id = ?"""
+                        cur = connection.cursor()
+                        result = cur.execute(req, (id,)).fetchone()
+                        for j in range(len(result)):
+                            self.tableWidget_2.setItem(i, j, QTableWidgetItem(str(result[j])))
 
-                # for i, elem in enumerate(result):
-                #     for j, val in enumerate(elem):
-                #         self.tableWidget_2.setItem(i, j, QTableWidgetItem(str(val)))
-                header = self.tableWidget_2.horizontalHeader()
-                header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
-                header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
-                header.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
-                header.setSectionResizeMode(3, QtWidgets.QHeaderView.Stretch)
+                    # for i, elem in enumerate(result):
+                    #     for j, val in enumerate(elem):
+                    #         self.tableWidget_2.setItem(i, j, QTableWidgetItem(str(val)))
+                    header = self.tableWidget_2.horizontalHeader()
+                    header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+                    header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
+                    header.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
+                    header.setSectionResizeMode(3, QtWidgets.QHeaderView.Stretch)
+                else:
+                    self.pushButton_6.setText('У вас нет книг в списке для чтения')
+                    self.tableWidget_2.clear()
+
             else:
                 self.pushButton_6.setText('У вас нет книг в списке для чтения')
+
+    def make_filters(self):
+        checkbox = ['%', '%', '%']
+        if self.lineEdit.text():
+            year = self.lineEdit.text()
+            checkbox[0] = year
+        if self.lineEdit_2.text():
+            author = self.lineEdit_2.text()
+            checkbox[1] = author
+        if self.comboBox_2.currentText() != 'все жанры':
+            genre = self.comboBox_2.currentText()
+            checkbox[2] = genre
+        self.show_filter(checkbox)
+
+    def show_filter(self, checkbox):
+        req = """SELECT * FROM books WHERE year LIKE ? AND author LIKE ? AND genre LIKE ?"""
+        cur = connection.cursor()
+        result = cur.execute(req, (checkbox[0], checkbox[1], checkbox[2],)).fetchall()
+        self.tableWidget.setRowCount(len(result))
+        if len(result):
+            self.tableWidget.setColumnCount(len(result[0]))
+        # получение заголовков таблицы с помощью cur.description
+        self.titles = [description[0] for description in cur.description]
+        # установка заголовков в таблицу
+        self.tableWidget.setHorizontalHeaderLabels(self.titles)
+        for i, elem in enumerate(result):
+            for j, val in enumerate(elem):
+                self.tableWidget.setItem(i, j, QTableWidgetItem(str(val)))
+        header = self.tableWidget.horizontalHeader()
+        header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+        header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
+        header.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
+        header.setSectionResizeMode(3, QtWidgets.QHeaderView.Stretch)
+
+    def clear_filters(self):
+        self.lineEdit.clear()
+        self.lineEdit_2.clear()
+        self.redraw_table_1()
     #
     # def show_delete(self):
     #     if self.role == 'Библиотекарь':
@@ -647,8 +782,8 @@ class MyMainWindow_User(QMainWindow, Ui_MainWindow_Design_User):
         else:
             row = row[0]
             info = []
-            for i in range(self.tableWidget.columnCount()):
-                info.append(self.tableWidget.item(row, i).text())
+            for i in range(self.tableWidget_2.columnCount()):
+                info.append(self.tableWidget_2.item(row, i).text())
             self.delete_from_bookmarks.save_item(info[0])
 
     # def update_books(self, id, name, author, year, publisher, translator, genre):
@@ -679,6 +814,9 @@ class MyMainWindow_User(QMainWindow, Ui_MainWindow_Design_User):
             cur = connection.cursor()
             result = cur.execute(req, (self.name,)).fetchone()
             list_books = result[0].split(',')
+            for i in range(len(list_books)):
+                if list_books[i] == '':
+                    del list_books[i]
             if str(id) not in list_books:
                 list_books.append(str(id))
                 req = """UPDATE bookmarks SET list_books = ? WHERE name = ?"""
@@ -724,7 +862,7 @@ class MyMainWindow_User(QMainWindow, Ui_MainWindow_Design_User):
                                         'Произошла ошибка при добавлении книги в список для чтения!')
 
     def show_profile_information(self):
-        self.profile_information.get_information(self.name, self.age, self.role, self.password, self.mail)
+        self.profile_information.get_information(self.name, self.age, self.sex, self.role, self.password, self.mail)
         self.profile_information.show()
 
     def create_piechart_1(self):
@@ -853,6 +991,7 @@ class MyMainWindow_User(QMainWindow, Ui_MainWindow_Design_User):
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         connection.close()
 
+
 # Класс формы добавления, со всеми методами
 class AddItemForm(QMainWindow, Ui_Insert_Item_Form_Design):
     def __init__(self, parent=None):
@@ -965,6 +1104,7 @@ class Profile_Information(QMainWindow, Ui_Profile_Information_Design):
         self.setupUi(self)
         self.name = ''
         self.age = ''
+        self.sex = ''
         self.role = ''
         self.password = ''
         self.mail = ''
@@ -978,21 +1118,24 @@ class Profile_Information(QMainWindow, Ui_Profile_Information_Design):
         self.update_profile = UpdateProfileInformation(self)
         self.set_information()
 
-    def get_information(self, name, age, password, role, mail):
+    def get_information(self, name, age, sex, password, role, mail):
         self.name = name
         self.age = age
+        self.sex = sex
         self.role = role
         self.password = password
         self.mail = mail
         self.set_information()
 
     def set_information(self):
-        len_password = len(self.role)
+        len_password = len(self.password)
         self.label_4.setText(self.name)
         self.label_10.setText(str(self.age))
+        self.label_2.setText(self.sex)
         self.label_13.setText('*' * len_password)
-        self.label_14.setText(self.password)
+        self.label_14.setText(self.role)
         self.label_15.setText(self.mail)
+        self.parent().get_profile_information(self.name, self.age, self.sex, self.password, self.role, self.mail)
 
     def show_password(self):
         if self.flag is not True:
@@ -1018,7 +1161,7 @@ class Profile_Information(QMainWindow, Ui_Profile_Information_Design):
         self.close()
 
     def check_update_profile(self):
-        self.update_profile.get_info([self.name, self.age, self.password, self.role, self.mail])
+        self.update_profile.get_info([self.name, self.age, self.sex,  self.password, self.role, self.mail])
         self.update_profile.set_info()
         self.update_profile.show()
 
@@ -1036,7 +1179,6 @@ class Profile_Information(QMainWindow, Ui_Profile_Information_Design):
         cur = connection.cursor()
         cur.execute(req, (name, age, role, password, mail, self.name))
         connection.commit()
-
 
 
 class UpdateProfileInformation(QMainWindow, Ui_Update_Profile_Form_Design):
@@ -1075,11 +1217,12 @@ class UpdateProfileInformation(QMainWindow, Ui_Update_Profile_Form_Design):
         # переходим в функцию удаления элементов
         if valid == QMessageBox.Yes:
             try:
-                req = "UPDATE peoples SET name = ?, age = ?, role = ?, password = ?, mail = ? WHERE name = ?"
+                req = "UPDATE peoples SET name = ?, age = ?, sex = ?" \
+                      " role = ?, password = ?, mail = ? WHERE name = ?"
                 cur = connection.cursor()
-                cur.execute(req, (name, age, role, password, mail, self.name))
+                cur.execute(req, (name, age, sex, role, password, mail, self.name))
                 connection.commit()
-                self.parent().get_information(name, age, role, password, mail)
+                self.parent().get_information(name, age, sex, role, password, mail)
             except:
                 print('ошибка')
         self.close()
