@@ -14,7 +14,7 @@ from qt_design.python_design.update_profile_information_design import Ui_Update_
 from PyQt5 import uic, QtWidgets, QtGui
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTableWidgetItem, QMessageBox
 from PyQt5.QtChart import QChart, QChartView, QPieSeries, QPieSlice
-from PyQt5.QtGui import QPainter, QPen
+from PyQt5.QtGui import QPainter, QPen, QColor
 from PyQt5.QtCore import Qt
 
 connection = sqlite3.connect('digital_library.sqlite')
@@ -39,15 +39,17 @@ class Authorization(QMainWindow, Ui_Authorization_Design):
         if result:
             if password in result:
                 self.close()
-                if result[4] == 'Читатель':
+                if result[5] == 'Читатель':
                     self.main_window = MyMainWindow_User(self)
-                    self.main_window.get_profile_information(result[1], result[2], result[4], result[3], result[5])
+                    self.main_window.get_profile_information(result[1], result[2], result[3], result[4], result[5],
+                                                             result[6])
                     self.main_window.redraw_table_1()
                     self.main_window.redraw_table_2()
                     self.main_window.show()
                 else:
                     self.main_window = MyMainWindow_Dev(self)
-                    self.main_window.get_profile_information(result[1], result[2], result[4], result[3], result[5])
+                    self.main_window.get_profile_information(result[1], result[2], result[3], result[4], result[5],
+                                                             result[6])
                     self.main_window.redraw_table_1()
                     self.main_window.redraw_table_2()
                     self.main_window.show()
@@ -90,14 +92,14 @@ class Registration(QMainWindow, Ui_Registration_Design):
             help.append(self.radioButton.text())
         if self.radioButton_2.isChecked():
             help.append(self.radioButton_2.text())
-        if '' not in help:
+        if (help[4] == '' and help.count('') == 1) or '' not in help:
             if self.check_name(help[0]):
                 if int(help[1]) > 0:
                     if (help[3] == 'Библиотекарь' and help[4] == '456') or help[3] == 'Читатель':
                         if self.check_email(help[4]):
                             req = """INSERT INTO peoples(name, age, sex, password, role, mail) VALUES(?, ?, ?, ?, ?, ?)"""
                             cur = connection.cursor()
-                            result = cur.execute(req, (help[0], help[1], help[2], help[3], help[4], help[6]))
+                            result = cur.execute(req, (help[0], help[1], help[6], help[2], help[3], help[5]))
                             if result:
 
                                 valid = QMessageBox.warning(self, 'Проверка регистрации!',
@@ -105,14 +107,16 @@ class Registration(QMainWindow, Ui_Registration_Design):
                                 self.close()
                                 if help[3] == 'Читатель':
                                     self.main_window = MyMainWindow_User(self)
-                                    self.main_window.get_profile_information(help[0], help[1], help[2], help[3], help[4], help[6])
+                                    self.main_window.get_profile_information(help[0], help[1], help[6], help[2],
+                                                                             help[3], help[5])
                                     self.make_bookmarks_field(help[0])
                                     self.main_window.redraw_table_1()
                                     self.main_window.redraw_table_2()
                                     self.main_window.show()
                                 else:
                                     self.main_window = MyMainWindow_Dev(self)
-                                    self.main_window.get_profile_information(help[0], help[1], help[2], help[3], help[4], help[6])
+                                    self.main_window.get_profile_information(help[0], help[1], help[6], help[2],
+                                                                             help[3], help[5])
                                     self.make_bookmarks_field(help[0])
                                     self.main_window.redraw_table_1()
                                     self.main_window.redraw_table_2()
@@ -201,9 +205,8 @@ class MyMainWindow_Dev(QMainWindow, Ui_MainWindow_Design_Dev):
         self.create_piechart_1()
         self.create_piechart_2()
         self.create_piechart_3()
-        self.create_piechart_4()
 
-    def get_profile_information(self, name, age, role, password, mail, sex):
+    def get_profile_information(self, name, age, sex, password, role, mail):
         self.name = name
         self.age = age
         self.role = role
@@ -453,30 +456,46 @@ class MyMainWindow_Dev(QMainWindow, Ui_MainWindow_Design_Dev):
                                         'Произошла ошибка при добавлении книги в список для чтения!')
 
     def show_profile_information(self):
-        self.profile_information.get_information(self.name, self.age, self.role, self.password, self.mail)
+        self.profile_information.get_information(self.name, self.age, self.sex, self.password, self.role, self.mail)
         self.profile_information.show()
 
     def create_piechart_1(self):
+        req_men = 'SELECT count(name) FROM peoples WHERE sex = "Мужской"'
+        cur = connection.cursor()
+        result_men = cur.execute(req_men).fetchall()
+        req_women = 'SELECT count(name) FROM peoples WHERE sex = "Женский"'
+        cur = connection.cursor()
+        result_women = cur.execute(req_women).fetchall()
+
+        for i in result_men:
+            men = int(*i)
+        for i in result_women:
+            women = int(*i)
+
         series = QPieSeries()
-        series.append("Фантастика", 80)
-        series.append("Детектив", 70)
-        series.append("Вестерн", 50)
-        series.append("Роман", 40)
-        series.append("Приключения", 30)
+        series.append('Мужчины', int(men))
+        series.append('Женщины', int(women))
 
         slice = QPieSlice()
-        slice = series.slices()[2]
+        slice = series.slices()[0]
+        slice.setExploded(False)
+        slice.setLabelVisible(True)
+        slice.setPen(QPen(Qt.darkGreen, 0.2))
+        slice.setBrush(QColor(32, 178, 170))
+
+        slice = QPieSlice()
+        slice = series.slices()[1]
         slice.setExploded(True)
         slice.setLabelVisible(True)
-        slice.setPen(QPen(Qt.darkGreen, 0.5))
-        slice.setBrush(Qt.green)
+        slice.setPen(QPen(Qt.darkGreen, 0.2))
+        slice.setBrush(QColor(0, 98, 98))
 
         chart = QChart()
         chart.legend().hide()
         chart.addSeries(series)
         chart.createDefaultAxes()
         chart.setAnimationOptions(QChart.SeriesAnimations)
-        chart.setTitle("Топ любимых жанров")
+        chart.setTitle("Статистика мужчин и женщин")
 
         chart.legend().setVisible(True)
         chart.legend().setAlignment(Qt.AlignBottom)
@@ -487,16 +506,44 @@ class MyMainWindow_Dev(QMainWindow, Ui_MainWindow_Design_Dev):
         self.gridLayout.addWidget(chartview)
 
     def create_piechart_2(self):
+        req_year = 'SELECT age FROM peoples'
+        cur = connection.cursor()
+        result = cur.execute(req_year).fetchall()
+
+        count_eld = 0
+        count_normal = 0
+        count_old = 0
+
+        for i in result:
+            if int(*i) <= 20:
+                count_eld += 1
+            if 21 <= int(*i) <= 40:
+                count_normal += 1
+            if 41 <= int(*i):
+                count_old += 1
+
         series = QPieSeries()
-        series.append("Фантастика", 80)
-        series.append("Детектив", 70)
-        series.append("Вестерн", 50)
-        series.append("Роман", 40)
-        series.append("Приключения", 30)
+        series.append('0 - 19', count_eld)
+        series.append('20 - 55', count_normal)
+        series.append('56 и больше', count_old)
 
         # adding slice
         slice = QPieSlice()
         slice = series.slices()[2]
+        slice.setExploded(True)
+        slice.setLabelVisible(True)
+        slice.setPen(QPen(Qt.darkGreen, 0.5))
+        slice.setBrush(Qt.green)
+
+        slice = QPieSlice()
+        slice = series.slices()[1]
+        slice.setExploded(True)
+        slice.setLabelVisible(True)
+        slice.setPen(QPen(Qt.darkGreen, 0.5))
+        slice.setBrush(Qt.green)
+
+        slice = QPieSlice()
+        slice = series.slices()[0]
         slice.setExploded(True)
         slice.setLabelVisible(True)
         slice.setPen(QPen(Qt.darkGreen, 0.5))
@@ -507,7 +554,7 @@ class MyMainWindow_Dev(QMainWindow, Ui_MainWindow_Design_Dev):
         chart.addSeries(series)
         chart.createDefaultAxes()
         chart.setAnimationOptions(QChart.SeriesAnimations)
-        chart.setTitle("Топ любимых жанров")
+        chart.setTitle("Статистика возраста")
 
         chart.legend().setVisible(True)
         chart.legend().setAlignment(Qt.AlignBottom)
@@ -518,12 +565,30 @@ class MyMainWindow_Dev(QMainWindow, Ui_MainWindow_Design_Dev):
         self.gridLayout_2.addWidget(chartview)
 
     def create_piechart_3(self):
+        req = """SELECT genre FROM books"""
+        cur = connection.cursor()
+        result = cur.execute(req).fetchall()
+        result_genre = []
+        result_genre_2 = {}
+        for i in result:
+            result_genre.append(*i)
+        for i in result_genre:
+            if i not in result_genre_2:
+                result_genre_2[i] = result_genre.count(i)
+        sorted_result = {}
+        sorted_key = sorted(result_genre_2, key=result_genre_2.get, reverse=True)
+        for w in sorted_key:
+            sorted_result[w] = result_genre_2[w]
+        print(sorted_result)
+
+        key = list(sorted_result.keys())
         series = QPieSeries()
-        series.append("Фантастика", 80)
-        series.append("Детектив", 70)
-        series.append("Вестерн", 50)
-        series.append("Роман", 40)
-        series.append("Приключения", 30)
+
+        series.append(key[0], result_genre_2[key[0]])
+        series.append(key[1], result_genre_2[key[1]])
+        series.append(key[2], result_genre_2[key[2]])
+        series.append(key[3], result_genre_2[key[3]])
+        series.append(key[4], result_genre_2[key[4]])
 
         # adding slice
         slice = QPieSlice()
@@ -538,7 +603,7 @@ class MyMainWindow_Dev(QMainWindow, Ui_MainWindow_Design_Dev):
         chart.addSeries(series)
         chart.createDefaultAxes()
         chart.setAnimationOptions(QChart.SeriesAnimations)
-        chart.setTitle("Топ любимых жанров")
+        chart.setTitle("Самые популярные жанры")
 
         chart.legend().setVisible(True)
         chart.legend().setAlignment(Qt.AlignBottom)
@@ -607,15 +672,13 @@ class MyMainWindow_User(QMainWindow, Ui_MainWindow_Design_User):
 
         self.create_piechart_1()
         self.create_piechart_2()
-        self.create_piechart_3()
-        self.create_piechart_4()
 
-    def get_profile_information(self, name, age, sex,  role, password, mail):
+    def get_profile_information(self, name, age, sex, password, role, mail):
         self.name = name
         self.age = age
         self.sex = sex
-        self.role = role
         self.password = password
+        self.role = role
         self.mail = mail
         self.flag = True
 
@@ -716,6 +779,7 @@ class MyMainWindow_User(QMainWindow, Ui_MainWindow_Design_User):
         self.lineEdit.clear()
         self.lineEdit_2.clear()
         self.redraw_table_1()
+
     #
     # def show_delete(self):
     #     if self.role == 'Библиотекарь':
@@ -862,46 +926,34 @@ class MyMainWindow_User(QMainWindow, Ui_MainWindow_Design_User):
                                         'Произошла ошибка при добавлении книги в список для чтения!')
 
     def show_profile_information(self):
-        self.profile_information.get_information(self.name, self.age, self.sex, self.role, self.password, self.mail)
+        self.profile_information.get_information(self.name, self.age, self.sex, self.password, self.role, self.mail)
         self.profile_information.show()
 
     def create_piechart_1(self):
+        req = """SELECT genre FROM books"""
+        cur = connection.cursor()
+        result = cur.execute(req).fetchall()
+        result_genre = []
+        result_genre_2 = {}
+        for i in result:
+            result_genre.append(*i)
+        for i in result_genre:
+            if i not in result_genre_2:
+                result_genre_2[i] = result_genre.count(i)
+        sorted_result = {}
+        sorted_key = sorted(result_genre_2, key=result_genre_2.get, reverse=True)
+        for w in sorted_key:
+            sorted_result[w] = result_genre_2[w]
+        print(sorted_result)
+
+        key = list(sorted_result.keys())
         series = QPieSeries()
-        series.append("Фантастика", 80)
-        series.append("Детектив", 70)
-        series.append("Вестерн", 50)
-        series.append("Роман", 40)
-        series.append("Приключения", 30)
 
-        slice = QPieSlice()
-        slice = series.slices()[2]
-        slice.setExploded(True)
-        slice.setLabelVisible(True)
-        slice.setPen(QPen(Qt.darkGreen, 0.5))
-        slice.setBrush(Qt.green)
-
-        chart = QChart()
-        chart.legend().hide()
-        chart.addSeries(series)
-        chart.createDefaultAxes()
-        chart.setAnimationOptions(QChart.SeriesAnimations)
-        chart.setTitle("Топ любимых жанров")
-
-        chart.legend().setVisible(True)
-        chart.legend().setAlignment(Qt.AlignBottom)
-
-        chartview = QChartView(chart)
-        chartview.setRenderHint(QPainter.Antialiasing)
-
-        self.gridLayout.addWidget(chartview)
-
-    def create_piechart_2(self):
-        series = QPieSeries()
-        series.append("Фантастика", 80)
-        series.append("Детектив", 70)
-        series.append("Вестерн", 50)
-        series.append("Роман", 40)
-        series.append("Приключения", 30)
+        series.append(key[0], result_genre_2[key[0]])
+        series.append(key[1], result_genre_2[key[1]])
+        series.append(key[2], result_genre_2[key[2]])
+        series.append(key[3], result_genre_2[key[3]])
+        series.append(key[4], result_genre_2[key[4]])
 
         # adding slice
         slice = QPieSlice()
@@ -916,38 +968,7 @@ class MyMainWindow_User(QMainWindow, Ui_MainWindow_Design_User):
         chart.addSeries(series)
         chart.createDefaultAxes()
         chart.setAnimationOptions(QChart.SeriesAnimations)
-        chart.setTitle("Топ любимых жанров")
-
-        chart.legend().setVisible(True)
-        chart.legend().setAlignment(Qt.AlignBottom)
-
-        chartview = QChartView(chart)
-        chartview.setRenderHint(QPainter.Antialiasing)
-
-        self.gridLayout_2.addWidget(chartview)
-
-    def create_piechart_3(self):
-        series = QPieSeries()
-        series.append("Фантастика", 80)
-        series.append("Детектив", 70)
-        series.append("Вестерн", 50)
-        series.append("Роман", 40)
-        series.append("Приключения", 30)
-
-        # adding slice
-        slice = QPieSlice()
-        slice = series.slices()[2]
-        slice.setExploded(True)
-        slice.setLabelVisible(True)
-        slice.setPen(QPen(Qt.darkGreen, 0.5))
-        slice.setBrush(Qt.green)
-
-        chart = QChart()
-        chart.legend().hide()
-        chart.addSeries(series)
-        chart.createDefaultAxes()
-        chart.setAnimationOptions(QChart.SeriesAnimations)
-        chart.setTitle("Топ любимых жанров")
+        chart.setTitle("Самые популярные жанры")
 
         chart.legend().setVisible(True)
         chart.legend().setAlignment(Qt.AlignBottom)
@@ -957,13 +978,31 @@ class MyMainWindow_User(QMainWindow, Ui_MainWindow_Design_User):
 
         self.gridLayout_3.addWidget(chartview)
 
-    def create_piechart_4(self):
+    def create_piechart_2(self):
+        req = """SELECT genre FROM books"""
+        cur = connection.cursor()
+        result = cur.execute(req).fetchall()
+        result_genre = []
+        result_genre_2 = {}
+        for i in result:
+            result_genre.append(*i)
+        for i in result_genre:
+            if i not in result_genre_2:
+                result_genre_2[i] = result_genre.count(i)
+        sorted_result = {}
+        sorted_key = sorted(result_genre_2, key=result_genre_2.get, reverse=True)
+        for w in sorted_key:
+            sorted_result[w] = result_genre_2[w]
+        print(sorted_result)
+
+        key = list(sorted_result.keys())
         series = QPieSeries()
-        series.append("Фантастика", 80)
-        series.append("Детектив", 70)
-        series.append("Вестерн", 50)
-        series.append("Роман", 40)
-        series.append("Приключения", 30)
+
+        series.append(key[0], result_genre_2[key[0]])
+        series.append(key[1], result_genre_2[key[1]])
+        series.append(key[2], result_genre_2[key[2]])
+        series.append(key[3], result_genre_2[key[3]])
+        series.append(key[4], result_genre_2[key[4]])
 
         # adding slice
         slice = QPieSlice()
@@ -978,7 +1017,7 @@ class MyMainWindow_User(QMainWindow, Ui_MainWindow_Design_User):
         chart.addSeries(series)
         chart.createDefaultAxes()
         chart.setAnimationOptions(QChart.SeriesAnimations)
-        chart.setTitle("Топ любимых жанров")
+        chart.setTitle("Самые популярные жанры")
 
         chart.legend().setVisible(True)
         chart.legend().setAlignment(Qt.AlignBottom)
@@ -986,7 +1025,7 @@ class MyMainWindow_User(QMainWindow, Ui_MainWindow_Design_User):
         chartview = QChartView(chart)
         chartview.setRenderHint(QPainter.Antialiasing)
 
-        self.gridLayout_4.addWidget(chartview)
+        self.gridLayout_3.addWidget(chartview)
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         connection.close()
@@ -1105,8 +1144,9 @@ class Profile_Information(QMainWindow, Ui_Profile_Information_Design):
         self.name = ''
         self.age = ''
         self.sex = ''
-        self.role = ''
         self.password = ''
+        self.role = ''
+
         self.mail = ''
 
         self.flag = False
@@ -1122,8 +1162,8 @@ class Profile_Information(QMainWindow, Ui_Profile_Information_Design):
         self.name = name
         self.age = age
         self.sex = sex
-        self.role = role
         self.password = password
+        self.role = role
         self.mail = mail
         self.set_information()
 
@@ -1139,11 +1179,11 @@ class Profile_Information(QMainWindow, Ui_Profile_Information_Design):
 
     def show_password(self):
         if self.flag is not True:
-            self.label_13.setText(self.role)
+            self.label_13.setText(self.password)
             self.flag = True
             self.pushButton_3.setText('Скрыть пароль')
         else:
-            len_password = len(self.role)
+            len_password = len(self.password)
             self.label_13.setText('*' * len_password)
             self.flag = False
             self.pushButton_3.setText('Показать пароль')
@@ -1161,23 +1201,25 @@ class Profile_Information(QMainWindow, Ui_Profile_Information_Design):
         self.close()
 
     def check_update_profile(self):
-        self.update_profile.get_info([self.name, self.age, self.sex,  self.password, self.role, self.mail])
+        self.update_profile.get_info([self.name, self.age, self.sex, self.password, self.role, self.mail])
         self.update_profile.set_info()
         self.update_profile.show()
 
     def delete_profile(self):
         connection = sqlite3.connect('digital_library.sqlite')
         req = """DELETE from peoples WHERE name = ?"""
+        req_2 = """DELETE FROM bookmarks WHERE name = ?"""
         cur = connection.cursor()
         cur.execute(req, (self.name,))
+        cur.execute(req_2, (self.name,))
         connection.commit()
         valid = QMessageBox.warning(self, 'Удаление профиля',
                                     'Профиль успешно удален. Для создания нового аккаунт перезайдите в приложение')
 
-    def update_profile(self, name, age, role, password, mail):
-        req = "UPDATE peoples SET name = ?, age = ?, role = ?, password = ?, mail = ? WHERE name = ?"
+    def update_profile(self, name, age, sex, role, password, mail):
+        req = "UPDATE peoples SET name = ?, age = ?, sex = ? role = ?, password = ?, mail = ? WHERE name = ?"
         cur = connection.cursor()
-        cur.execute(req, (name, age, role, password, mail, self.name))
+        cur.execute(req, (name, age, sex, role, password, mail, self.name))
         connection.commit()
 
 
@@ -1196,36 +1238,65 @@ class UpdateProfileInformation(QMainWindow, Ui_Update_Profile_Form_Design):
     def get_info(self, info):
         self.name = info[0]
         self.age = info[1]
-        self.role = info[2]
+        self.sex = info[2]
         self.password = info[3]
-        self.mail = info[4]
+        self.role = info[4]
+        self.mail = info[5]
 
     def set_info(self):
         self.lineEdit_10.setText(self.name)
         self.lineEdit_13.setText(str(self.age))
-        self.lineEdit_14.setText(self.role)
-        self.lineEdit_12.setText(self.password)
+        if self.sex == 'Мужской':
+            self.radioButton.setChecked(True)
+        else:
+            self.radioButton_2.setChecked(True)
+        self.lineEdit_14.setText(self.password)
+        if self.role == 'Читатель':
+            self.comboBox.setItemText(0, 'Читатель')
+            self.comboBox.setItemText(1, 'Библиотекарь')
+        else:
+            self.comboBox.setItemText(1, 'Читатель')
+            self.comboBox.setItemText(0, 'Библиотекарь')
         self.lineEdit_11.setText(self.mail)
 
     def make_update(self):
-        name, age, role, password, mail = self.lineEdit_10.text(), self.lineEdit_13.text(), self.lineEdit_14.text(), self.lineEdit_12.text(), self.lineEdit_11.text()
-        valid = QMessageBox.question(
-            self, 'Подтверждение действий',
-            "Вы действительно хотите удалить данный аккаунт? При удаление вы выйдете из системы",
-            QMessageBox.Yes, QMessageBox.No)
-        # Если пользователь ответил утвердительно,
-        # переходим в функцию удаления элементов
-        if valid == QMessageBox.Yes:
-            try:
-                req = "UPDATE peoples SET name = ?, age = ?, sex = ?" \
-                      " role = ?, password = ?, mail = ? WHERE name = ?"
-                cur = connection.cursor()
-                cur.execute(req, (name, age, sex, role, password, mail, self.name))
-                connection.commit()
-                self.parent().get_information(name, age, sex, role, password, mail)
-            except:
-                print('ошибка')
-        self.close()
+        name = self.lineEdit_10.text()
+        age = self.lineEdit_13.text()
+        if self.radioButton.isChecked():
+            sex = 'Мужской'
+        else:
+            sex = 'Женский'
+        role = self.comboBox.currentText()
+        password = self.lineEdit_14.text()
+        code = self.lineEdit.text()
+        mail = self.lineEdit_11.text()
+        if '' not in [name, age, password, mail]:
+            if (role == 'Библиотекарь' and code == '456') or role == 'Читатель':
+                valid = QMessageBox.question(
+                    self, 'Подтверждение действий',
+                    "Вы действительно хотите изменить данные в аккаунте? ",
+                    QMessageBox.Yes, QMessageBox.No)
+                # Если пользователь ответил утвердительно,
+                # переходим в функцию удаления элементов
+                if valid == QMessageBox.Yes:
+                    try:
+                        req = "UPDATE peoples SET name = ?, age = ?, sex = ?, password = ?, " \
+                              "role = ?, mail = ? WHERE name = ?"
+                        cur = connection.cursor()
+                        cur.execute(req, (name, age, sex, password, role, mail, self.name,))
+                        connection.commit()
+                        self.parent().get_information(name, age, sex, password, role, mail)
+                    except:
+                        print('ошибка')
+                self.close()
+            else:
+                valid = QMessageBox.information(
+                    self, 'Ошибка доступа',
+                    "Для создания аккаунта библиотекаря вам нужно иметь код библиотеки")
+        else:
+            valid = QMessageBox.information(
+                self, 'Ошибка формы',
+                "Вам следует заполнить все графы")
 
 
 if __name__ == '__main__':
